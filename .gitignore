@@ -5,7 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
-
+.idea
+core/static/record_redis_backup/*.json
 # Distribution / packaging
 .Python
 build/
