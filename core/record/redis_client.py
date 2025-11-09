@@ -238,7 +238,7 @@ class AsyncRedisClient:
 
     @classmethod
     def sync_import_from_file(cls, key_prefix: str):
-        sync_redis_client = get_sync_client()
+        sync_redis_client, _ = get_sync_client()
         current_dir = Path(__file__).resolve().parent
         parent_dir = current_dir.parent
         output_dir = parent_dir / "static" / "record_redis_backup"

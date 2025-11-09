@@ -2,9 +2,9 @@ import os
 import uuid
 
 from fastapi import BackgroundTasks, Request
-
 from core.record.redis_client import AsyncRedisClient
-from server.app.task.controller import TaskController
+from server.app.task.controller import TaskController, ServerSourceInfo
+from server.app.task.record_controller import RecordController
 from server.routers.task import task_router
 from task_process.monitor import monitor_and_run_task
 
@@ -34,3 +34,24 @@ async def restore_record(request: Request):
         return {"message": "已恢复"}
     except Exception as e:
         return {"message": f"恢复异常：{e}"}
+
+
+@task_router.get('/ping')
+async def ping():
+    return ServerSourceInfo().get_info()
+
+
+class RPCObject:
+    def __init__(self, name=None, record_backup_index=None, executor_id=None):
+        self.name = name
+        self.record_backup_index = record_backup_index
+        self.executor_id = executor_id
+
+
+@task_router.post('/rpc/record')
+async def rpc_record(request: Request):
+    rpc_object = RPCObject(**dict(request.query_params))
+    data = RecordController(rpc_object.name).get_data(record_backup_index=rpc_object.record_backup_index,
+                                                      **await request.json())
+    print(rpc_object.name)
+    return {"data": data}
