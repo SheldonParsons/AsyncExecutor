@@ -2,7 +2,7 @@ from enum import Enum
 
 rcp_headers = {
     'Content-Type': 'application/json',
-    'HTTP_X_INTERNAL': 'from_nginx'
+    'X-Internal': 'from_nginx'
 }
 
 
