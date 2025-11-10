@@ -1,0 +1,21 @@
+[Unit]
+Description=AsyncExecutor
+After=network.target
+
+[Service]
+# 用户名和组
+User=root
+Group=root
+
+# 2. 替换成你的项目根目录的绝对路径
+WorkingDirectory=/home/backend/AsyncExecutor
+ExecStart=/home/backend/AsyncExecutor/.venv/bin/uvicorn server.start:app --host 0.0.0.0 --port 7788
+
+Restart=on-failure  # 崩溃时自动重启
+RestartSec=3        # 重启间隔3秒钟
+
+StandardOutput=file:/home/backend/AsyncExecutor/log/app.log
+StandardError=file:/home/backend/AsyncExecutor/log/error.log
+
+[Install]
+WantedBy=multi-user.target
