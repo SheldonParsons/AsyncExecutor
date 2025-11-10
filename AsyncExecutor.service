@@ -9,7 +9,7 @@ Group=root
 
 # 2. 替换成你的项目根目录的绝对路径
 WorkingDirectory=/home/backend/AsyncExecutor
-ExecStart=/home/backend/AsyncExecutor/.venv/bin/uvicorn server.start:app --host 0.0.0.0 --port 7788
+ExecStart=/home/backend/AsyncExecutor/.venv/bin/uvicorn server.start:app --host 0.0.0.0 --port 7788 --workers 9
 
 Restart=on-failure  # 崩溃时自动重启
 RestartSec=3        # 重启间隔3秒钟
