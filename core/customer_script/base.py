@@ -1,6 +1,5 @@
 import json
 from collections import deque
-from tkinter.font import names
 from types import SimpleNamespace
 
 from core.customer_script._exception import ForbiddenCallException

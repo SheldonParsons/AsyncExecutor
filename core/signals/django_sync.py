@@ -2,7 +2,6 @@ import json
 import os
 
 import aiohttp
-from aiohttp import ClientSession
 
 from core.enums.executor import ExecType
 from core.signals.rpc_router import RpcCallbackTypeEnum, rcp_headers
