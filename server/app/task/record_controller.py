@@ -4,7 +4,6 @@ from typing import Optional, Tuple, Any, Dict, List
 from core.global_client.sync_redis import get_sync_client
 from core.record.redis_client import AsyncRedisClient
 
-
 class RecordController:
 
     def __init__(self, name):
@@ -33,6 +32,7 @@ class RecordController:
         """
         # 因为 decode_responses=True, 这里直接返回 List[str]
         pipe = self.client.pipeline()
+        print(f"key:{key}")
         pipe.lrange(key, start_index, -1)
         if extra_key:
             pipe.get(extra_key)

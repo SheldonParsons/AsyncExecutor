@@ -11,3 +11,4 @@ asyncpg==0.30.0
 psutil==7.1.3
 uvicorn==0.38.0
 redis==7.0.1
+captcha-recognizer==1.0.1

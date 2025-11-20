@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from collections import deque
 from dataclasses import dataclass
 from typing import Coroutine, Any, Optional, Tuple
@@ -31,6 +32,7 @@ class AsyncContext:
         try:
             before_result = await task.before_callback()
         except Exception as e:
+            traceback.print_exc()
             await task.error_callback(e)
         else:
             try:
@@ -43,6 +45,7 @@ class AsyncContext:
                     await task.after_callback(result, *before_result)
                 return result
             except Exception as e:
+                traceback.print_exc()
                 await task.error_callback(e, *before_result)
 
     def run_concurrently(

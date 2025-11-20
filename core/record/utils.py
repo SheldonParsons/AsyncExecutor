@@ -2,7 +2,8 @@ import json
 from abc import ABC, abstractmethod
 from typing import Any, Union, List
 
-from core.enums.executor import RedisProcessTypeEnum, RedisDetailTypeEnum
+from core.enums.executor import RedisProcessTypeEnum, RedisDetailTypeEnum, RaiseErrorTypeEnum
+from core.payload.node_executor.step_public_object.error_target_object import ErrorRaiseTarget
 from core.payload.utils.tools import get_current_ms
 
 
@@ -70,9 +71,10 @@ class ExceptionObject(ProcessObject):
 
 class ExceptionProcessObject(ExceptionObject):
     def __init__(self, desc="", type=RedisProcessTypeEnum.SYSTEM_EXCEPTION.value,
-                 detail: Union[None, JsonDetail] = None, raise_object=None):
+                 detail: Union[None, JsonDetail] = None, raise_object=None, error_type=RaiseErrorTypeEnum.SYSTEM):
         super().__init__(type=type, desc=desc, detail=detail)
-        self.raise_object = raise_object
+        self.raise_object: ErrorRaiseTarget = raise_object
+        self.error_type = error_type
 
 
 class StepRunningProcessObject(ProcessObject):
@@ -187,6 +189,12 @@ class IfFailedProcessObject(ProcessObject):
 
 class ErrorFailedProcessObject(ProcessObject):
     def __init__(self, desc="", type=RedisProcessTypeEnum.ERROR_FAILED.value,
+                 detail: Union[None, JsonDetail] = None):
+        super().__init__(type=type, desc=desc, detail=detail)
+
+
+class ErrorWarningProcessObject(ProcessObject):
+    def __init__(self, desc="", type=RedisProcessTypeEnum.ERROR_WARNING.value,
                  detail: Union[None, JsonDetail] = None):
         super().__init__(type=type, desc=desc, detail=detail)
 

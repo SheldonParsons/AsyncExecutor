@@ -3,12 +3,13 @@ from collections import deque
 from typing import Union, Self, Tuple, Dict, Callable, Any
 
 from core.controller.async_task_runner import TaskRunner
-from core.enums.executor import NodeStatusEnum, NodeResultEnum, StepTypeEnum
+from core.enums.executor import NodeStatusEnum, NodeResultEnum, StepTypeEnum, ErrorStrategyMixinEnum, \
+    ERROR_STRATEGY_DESC_MAPPING
 from core.executor.core import RunnerExecutor
 from core.payload.node_executor.case import CaseRunController
 from core.payload.node_executor.dispatch import ExecutorCaller
 from core.payload.node_executor.multitasker import MultitaskerRunController
-from core.payload.utils.error_strategy import ErrorStrategyController
+from core.payload.utils.error_strategy import SkippedParentController, is_error_step_target, ProcessErrorTarget
 from core.payload.utils.tools import run_loop_strategy, StaticPathIndex, PositionItem, get_current_ms
 from core.record.child_record.step import StepRecordRunner
 from core.record.utils import ExceptionProcessObject, ProcessObject
@@ -69,22 +70,34 @@ class RunStepExecutor(RunnerExecutor):
     async def error_callback(self, e: Exception, current_node: MultiwayTreeNode = None, *args, **kwargs):
         self.status = NodeStatusEnum.ERROR
         self.result = NodeResultEnum.ERROR_SELF
-        father_step: Union[None, MultiwayTreeNode] = self.search_step(current_node)
-        if father_step:
-            father_step.node.has_child_error = True
-        await self.update_fields_to_list(self.spi.child_case, failed_step_count=1)
-        await self.end_step()
         if e and len(e.args) > 0 and isinstance(e.args[0], ProcessObject):
-            process_object = e.args[0]
+            if is_error_step_target(e.args[0]):
+                self.status, self.result, process_object = await ProcessErrorTarget(current_node,
+                                                                                    e.args[0],
+                                                                                    self).exec()
+            else:
+                process_object = e.args[0]
         else:
             process_object = ExceptionProcessObject(f"系统错误：{e}")
-        await self.send_all_record(process_object)
+
+        if self.status == NodeStatusEnum.ERROR:
+            father_step: Union[None, MultiwayTreeNode] = self.search_step(current_node)
+            if father_step:
+                father_step.node.has_child_error = True
+            await self.update_fields_to_list(self.spi.child_case, failed_step_count=1)
+        else:
+            await self.update_fields_to_list(self.spi.child_case, done_step_count=1)
+        # 结束步骤，更改状态，写入步骤当前status、result
+        await self.end_step()
         # TODO: 需要特殊处理主动抛出错误的情况
-        self.change_parent_status_on_error(current_node)
+        error_strategy = self.skipped_parent_status(current_node)
+        process_object.desc += f" -> {ERROR_STRATEGY_DESC_MAPPING.get(error_strategy, f'未知中断：{error_strategy}')}"
+        # 需要传播给上级步骤的消息日志
+        await self.send_all_record(process_object)
 
     @classmethod
-    def change_parent_status_on_error(cls, current_node: MultiwayTreeNode):
-        ErrorStrategyController(current_node).exec()
+    def skipped_parent_status(cls, current_node: MultiwayTreeNode) -> str:
+        return SkippedParentController(current_node).exec()
 
     async def send_all_record(self, process_object):
         # TODO:性能优化，一次通信写入

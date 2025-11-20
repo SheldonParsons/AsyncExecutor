@@ -1,5 +1,4 @@
 import ast
-import asyncio
 import sys
 import traceback
 from enum import Enum
@@ -148,9 +147,12 @@ class DynamicCodeExecutor:
         if self.compile_code is None:
             raise RuntimeError("代码未编译，或编译失败，无法执行")
         with self.RecursionLimitContext():
+            from core.payload.node_executor.error_exec import ErrorScriptRaiseObject
             exec(self.compile_code, self.context)
             try:
                 return await self.context[PROXY_ASYNC_FUNCTION]()
+            except ErrorScriptRaiseObject as e:
+                raise e
             except MemoryResourceLimitExceededError as e:
                 raise MemoryResourceLimitExceededError(f"内存溢出：{e}，请优化您的代码")
             except RecursionError:

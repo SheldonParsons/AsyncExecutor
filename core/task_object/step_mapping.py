@@ -232,7 +232,8 @@ class Empty(Step, RealNode):
 
 class Error(Step, RealNode):
     def __init__(self, type=None, id=None, check=None, is_raise_step=None, is_root_step=None, status=None, parent=None,
-                 label=None, key=None, value=None, pattern=None, script=None, error_mode=None):
+                 label=None, key=None, value=None, pattern=None, script=None, error_mode=None, is_raise_exception=None,
+                 error_strategy=None):
         self.type = type
         self.id = id
         self.check = check
@@ -246,6 +247,8 @@ class Error(Step, RealNode):
         self.pattern = pattern
         self.script = script
         self.error_mode = error_mode
+        self.is_raise_exception = is_raise_exception
+        self.error_strategy = error_strategy
 
 
 class Delay(Step, RealNode):

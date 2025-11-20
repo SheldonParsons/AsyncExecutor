@@ -15,6 +15,7 @@ from core.record.utils import ScriptPrintProcessObject, ActionSleepProcessObject
 from core.task_object.case_list import Case
 from core.task_object.child_case_list import ChildCase
 from core.task_object.generate_object import GlobalOption
+from core.task_object.step_mapping import ChildMultitasker
 from core.task_object.task_info import TaskInfo
 
 if TYPE_CHECKING:
@@ -109,8 +110,8 @@ class StepExecutor(Executor):
         parent = step_info.parent.replace("_step", f"_{step_info.id}_step")
         return status, parent
 
-    def replace(self, value):
-        variable_mapping = VariableToller.get_variable_mapping(self.node)
+    def replace(self, value, real_node=None):
+        variable_mapping = VariableToller.get_variable_mapping(real_node or self.node)
         return ExchangeToller(value, variable_mapping, ChangeModeEnum.CHANGE_EVERY_TIME).replace()
 
 
@@ -137,9 +138,13 @@ class RunnerExecutor:
         skipped_status_tuple = (NodeStatusEnum.SKIPPED, NodeStatusEnum.CONDITIONAL, NodeStatusEnum.ERROR)
         if not isinstance(current_node.node.metadata, TaskInfo):
             # 检查上级点状态
-            if current_node.parent.node.status in skipped_status_tuple:
-                self.status = NodeStatusEnum.SKIPPED
-                return
+            if isinstance(current_node.parent.node.metadata, ChildMultitasker):
+                if current_node.parent.parent.node.status in skipped_status_tuple:
+                    self.status = NodeStatusEnum.SKIPPED
+            else:
+                if current_node.parent.node.status in skipped_status_tuple:
+                    self.status = NodeStatusEnum.SKIPPED
+                    return
         # 检查当前节点check变量值
         if check_self and self.metadata.check == 'none':
             self.status = NodeStatusEnum.SKIPPED

@@ -261,29 +261,28 @@ class ExchangeToller:
 # 使用示例
 if __name__ == "__main__":
     parser = VariableParser()
-    # test_str2 = """
-    # {{name}}
-    # {{'sheldon'}}
-    # {% mock 'integer',1000,2000 %}
-    # {{name|md5()|substr(10,20)}}
-    # {{'大萨达撒'|md5()|substr(10,20)|padStart(20,'12')}}
-    # {{'大萨达撒'|md5()|substr(10,20)|padStart(20,'12')}}
-    # {% mock 'now','second','yyyy-MM-dd HH:mm:ss','-2 day','start'|substr(1,5)|concat('sheldon') %}
-    # ----------error------------
-    # {% mock 'int2eger',1000,2000|m5d5()|bas2e64() %}
-    # {% mock 'integer',1000,2000|md5()|base64() %}
-    # {% mock 'name','true' %}
-    # """
     test_str2 = """
-    {
-        "name": {%mock1%},
-        "jk": "测试-BJAutoR{% mock 'now','day','yyyymmdd','','start' %}"
-    }
+    {{name}}
+    {{'sheldon'}}
+    {% mock 'integer',1000,2000 %}
+    {{name|md5()|substr(10,20)}}
+    {{'大萨达撒'|md5()|substr(10,20)|padStart(20,'12')}}
+    {{'大萨达撒'|md5()|substr(10,20)|padStart(20,'12')}}
+    {% mock 'now','second','yyyy-MM-dd HH:mm:ss','-2 day','start'|substr(1,5)|concat('sheldon') %}
+    ----------error------------
+    {% mock 'int2eger',1000,2000|m5d5()|bas2e64() %}
+    {% mock 'integer',1000,2000|md5()|base64() %}
+    {% mock 'name','true' %}
     """
+    # test_str2 = """
+    # {
+    #     "name": {%mock1%},
+    #     "jk": "测试-BJAutoR{% mock 'now','day','yyyymmdd','','start' %}"
+    # }
+    # """
     test_str = "{% mock 'integer',1000,2000 %}"
     variable_mapping: Dict[str, str] = {
         "name": "sheldon parsons"
     }
     res = ExchangeToller(test_str2, variable_mapping).replace()
     print(res)
-    print(json.loads(res))

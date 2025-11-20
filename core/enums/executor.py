@@ -77,6 +77,12 @@ class StepTypeEnum(str, Enum):
     CHILD_STEP_CASE = 'child_step_case'
 
 
+class RaiseErrorTypeEnum(str, Enum):
+    SCRIPT = 'script'
+    FAST = 'fast'
+    SYSTEM = 'system'
+
+
 class RedisProcessTypeEnum(str, Enum):
     SYSTEM = "system"
     SYSTEM_EXCEPTION = "system_exception"
@@ -101,6 +107,8 @@ class RedisProcessTypeEnum(str, Enum):
     IF_SUCCESS = "if_success"
     IF_FAILED = "if_failed"
     ERROR_FAILED = "error_failed"
+    ERROR_WARNING = "error_warning"
+    ERROR_INFO = "error_info"
     DELAY_WARNING = "delay_warning"
     DELAY_SUCCESS = "delay_success"
     VARIABLE_GET = "variable_get"
@@ -167,6 +175,20 @@ class ErrorStrategyMixinEnum(str, Enum):
     REF_CASE = 'ref_case'  # 结束引用用例 1
     RAISE = 'raise'  # 交由上级处理 -
     TASK = 'task'  # 结束任务 1
+
+
+ERROR_STRATEGY_DESC_MAPPING = {
+    'current_step': '跳过当前步骤',
+    'current_multitasker': '结束子执行器',
+    'multitasker': '结束执行器',
+    'current_case': '结束子用例',
+    'case': '结束用例',
+    'raise': '交由上级处理',
+    'task': '结束任务',
+    'ref_case_inner': '由引用用例内部抉择',
+    'ref_child_case': '结束引用子用例',
+    'ref_case': '结束引用用例'
+}
 
 
 class MultitaskerErrorStrategyEnum(str, Enum):

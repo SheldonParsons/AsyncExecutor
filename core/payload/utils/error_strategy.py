@@ -1,26 +1,27 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple, Union, Any
 
+from core.record.utils import ProcessObject, ExceptionProcessObject, ErrorWarningProcessObject
 from core.task_object.child_case_list import ChildCase
 from core.task_object.step_mapping import Case, ChildMultitasker, ChildStepCase
 from core.task_object.case_list import Case as GlobalCase
-from core.enums.executor import ErrorStrategyMixinEnum, NodeStatusEnum
+from core.enums.executor import ErrorStrategyMixinEnum, NodeStatusEnum, RaiseErrorTypeEnum, NodeResultEnum
 
 if TYPE_CHECKING:
     from core.task_object.galobal_mapping import MultiwayTreeNode
     from core.payload.step_exec import RunStepExecutor
 
 
-class ErrorStrategyController:
+class SkippedParentController:
 
     def __init__(self, node: MultiwayTreeNode):
         self.node: MultiwayTreeNode[RunStepExecutor] = node
         self.exec_runner = self.node.node
         self.in_case = self.exec_runner.in_case
 
-    def exec(self):
+    def exec(self) -> str:
         node, child_iter = self.get_real_error_strategy(self.node)
-        self.change_parent_status(node, child_iter)
+        return self.change_parent_status(node, child_iter)
 
     def change_parent_status(self, error_strategy_node: MultiwayTreeNode, child_iter):
         error_strategy = error_strategy_node.node.metadata.error_strategy
@@ -73,17 +74,26 @@ class ErrorStrategyController:
         elif error_strategy == ErrorStrategyMixinEnum.REF_CASE:
             inner_case_node: MultiwayTreeNode = self.get_inner_case_node(self.node)
             inner_case_node.node.status = NodeStatusEnum.SKIPPED
+        return error_strategy
 
-    def get_real_error_strategy(self, node: MultiwayTreeNode = None, child_iter=None):
+    def get_real_error_strategy(self, node: MultiwayTreeNode = None, child_iter=None, is_first_node=True):
+        if hasattr(node.node.metadata,
+                   'error_strategy') and node.node.metadata.error_strategy != ErrorStrategyMixinEnum.RAISE and is_first_node:
+            if node.node.metadata.error_strategy == ErrorStrategyMixinEnum.CURRENT_MULTITASKER:
+                return node, node.parent
+            elif node.node.metadata.error_strategy == ErrorStrategyMixinEnum.MULTITASKER:
+                return node, node.parent
+            else:
+                return node, child_iter
         parent_node = node.parent
         if isinstance(parent_node.node.metadata, ChildMultitasker):
             child_iter = parent_node
 
         if parent_node.node.metadata.error_strategy == ErrorStrategyMixinEnum.RAISE:
-            return self.get_real_error_strategy(parent_node, child_iter)
+            return self.get_real_error_strategy(parent_node, child_iter, is_first_node=False)
         elif parent_node.node.metadata.error_strategy == ErrorStrategyMixinEnum.REF_CASE_INNER:
             if parent_node.node.metadata.case_error_strategy == ErrorStrategyMixinEnum.RAISE:
-                return self.get_real_error_strategy(parent_node, child_iter)
+                return self.get_real_error_strategy(parent_node, child_iter, is_first_node=False)
             else:
                 return parent_node, child_iter
         else:
@@ -133,3 +143,37 @@ class ErrorStrategyController:
             return parent_node
         else:
             return self.get_task_node(parent_node)
+
+
+class ProcessErrorTarget:
+
+    def __init__(self, node: MultiwayTreeNode, exception_process_object: ExceptionProcessObject, step_executor):
+        self.node = node
+        self.exception_process_object = exception_process_object
+        self.step_executor = step_executor
+
+    async def exec(self) -> Tuple[
+        NodeStatusEnum, NodeResultEnum, Union[
+            ErrorWarningProcessObject, ExceptionProcessObject]]:
+        """
+        error_exec异常处理工具类，到了这里就已经表示命中了自定义异常了
+        :return:
+        """
+        is_raise_exception = self.exception_process_object.raise_object.is_raise_exception
+        if is_raise_exception:
+            status = NodeStatusEnum.ERROR
+            result = NodeResultEnum.ERROR_SELF
+            process_object = self.exception_process_object
+        else:
+            status = NodeStatusEnum.END
+            result = NodeResultEnum.SUCCESS
+            process_object = ErrorWarningProcessObject(f"命中错误：[{self.node.node.metadata.label}]，不抛出错误")
+
+        return status, result, process_object
+
+
+def is_error_step_target(process_object: ProcessObject):
+    if isinstance(process_object, ExceptionProcessObject):
+        if process_object.error_type in [RaiseErrorTypeEnum.FAST, RaiseErrorTypeEnum.SCRIPT]:
+            return True
+    return False

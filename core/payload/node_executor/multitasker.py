@@ -35,6 +35,11 @@ class MultitaskerRunController(StepExecutor):
                                            backup_desc=f'系统错误：无法找到多任务执行器[{self.node.node.metadata.label}]对应数据集')
                 else:
                     loop_data = dataset_env_mapping.get(env, Executor.EmptyObject())
+                    if loop_data['depend'] == 0:
+                        for env, data in dataset_env_mapping.items():
+                            if data['is_default'] is True:
+                                loop_data = data
+                    loop_data = loop_data['data']
                     if isinstance(loop_data, Executor.EmptyObject):
                         raise await self.throw(None,
                                                backup_desc=f'系统错误：无法找到多任务执行器[{self.node.node.metadata.label}]对应环境中的数据集')
