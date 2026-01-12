@@ -2,6 +2,7 @@ import copy
 import json
 import traceback
 import uuid
+from typing import Union
 from urllib.parse import parse_qsl
 
 from multidict import MultiDict
@@ -11,12 +12,13 @@ from core.executor.core import StepExecutor
 from core.payload.node_executor.interface_utils.action_hook import dispatch_hook
 from core.payload.node_executor.interface_utils.cover_interface_hook import CoverInterfaceController
 from core.payload.node_executor.interface_utils.params_maker import ParamsMaker
+from core.payload.node_executor.interface_utils.retry_handle import InterfaceRetryHandler
 from core.payload.node_executor.interface_utils.sender import HttpSender
 from core.payload.utils.tools import get_current_ms
 from core.payload.variables_controller.variable import VariableToller
 from core.record.utils import ExceptionProcessObject, StepDetail, InterfaceSuccessFinishProcessObject, \
     InterfaceExceptionProcessObject, InterfaceErrorFinishProcessObject, \
-    CoreExecReturn, InterfaceWarningProcessObject
+    CoreExecReturn, InterfaceWarningProcessObject, StepRunningProcessObject
 from core.task_object.galobal_mapping import MultiwayTreeNode
 from core.utils.py_variable_parser import ExchangeToller, ChangeModeEnum
 
@@ -36,6 +38,7 @@ class InterfaceRunController(StepExecutor):
         self.has_cover_url = False
         self.has_cover_url_params = False
         self.has_cover_headers = False
+        self.retry_handler: Union[None, InterfaceRetryHandler] = None
 
     async def run(self, *args, **kwargs):
         try:
@@ -81,10 +84,21 @@ class InterfaceRunController(StepExecutor):
             traceback.print_exc()
             raise await self.throw(e, backup_desc='系统错误：请求提取参数异常')
         try:
-            self.start_time = get_current_ms()
-            # 发送请求
-            await HttpSender(method, url, body, params_dict, headers, self.node.node.global_option.http_session,
-                             self.finish_callback, self.exception_callback)()
+            http_sender = HttpSender(method, url, body, params_dict, headers, self.node.node.global_option.http_session,
+                                     self.finish_callback, self.exception_callback,
+                                     timeout=self.node.node.metadata.timeout)
+            self.retry_handler = InterfaceRetryHandler(self.node.node.metadata, http_sender, self.node)
+
+            def before_send():
+                self.start_time = get_current_ms()
+
+            async def after_send(index: int, total: int, msg):
+                if total > 1:
+                    process_object = StepRunningProcessObject(
+                        desc=f"请求发送失败：{msg}，当前重试次数{index + 1}，剩余次数:{total - index - 1}。")
+                    await self.send_step(process_object)
+
+            await self.retry_handler.run(before_send, after_send)
         except Exception as e:
             traceback.print_exc()
             await self.throw(e, backup_desc='系统错误', backup_class=InterfaceExceptionProcessObject)
@@ -104,6 +118,10 @@ class InterfaceRunController(StepExecutor):
         return params_dict
 
     async def finish_callback(self, response_details: str, timing, process):
+        if await self.retry_handler.has_retry(result=True, code=int(json.loads(response_details)['status']),
+                                              raise_code=int(self.node.node.metadata.raise_code),
+                                              response_details=response_details, send_step=self.send_step):
+            return
         self.response_details = response_details
         should_raise = self.node.node.metadata.should_raise
         if should_raise:
@@ -136,7 +154,6 @@ class InterfaceRunController(StepExecutor):
                 self.node.parent.interface_last_node_result = True
                 error_object = InterfaceErrorFinishProcessObject(
                     f"接口发送异常：[{self.node.node.metadata.label}]，错误响应码：{response_code}", detail=step_detail)
-                # await self.send_step(error_object)
                 raise RuntimeError(error_object)
         data = {
             "request": self.request_details,
@@ -155,7 +172,9 @@ class InterfaceRunController(StepExecutor):
         await self.send_step(process_object)
         self.return_list = CoreExecReturn([process_object], [process_object], [process_object], None)
 
-    async def exception_callback(self, error_details: str, timing, process):
+    async def exception_callback(self, error_details: str, timing, process, exception):
+        if await self.retry_handler.has_retry(result=False, exception=exception):
+            return
         if not self.has_raise:
             self.error_details = error_details
             data = {
@@ -166,7 +185,6 @@ class InterfaceRunController(StepExecutor):
                 "process": process.to_json(),
                 "result": 'failed'
             }
-            print(f"data:{data}")
             step_detail: StepDetail = await self.make_interface_object_to_redis(
                 type=RedisDetailTypeEnum.INTERFACE_ERROR.value,
                 data=data)

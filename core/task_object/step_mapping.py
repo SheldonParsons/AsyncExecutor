@@ -28,7 +28,8 @@ class NormalStep(Step):
 
 class Interface(Step, RealNode):
     def __init__(self, type=None, id=None, label=None, check=None, is_raise_step=None, is_root_step=None,
-                 should_raise=None, raise_code=None, status=None, parent=None, interface=None, project_id=None):
+                 should_raise=None, raise_code=None, status=None, parent=None, interface=None, project_id=None,
+                 timeout=60, retry_strategy='no', retry_times=1, retry_script=""):
         self.type = type
         self.id = id
         self.label = label
@@ -41,6 +42,10 @@ class Interface(Step, RealNode):
         self.parent = parent
         self.interface = interface
         self.project_id = project_id
+        self.timeout = timeout
+        self.retry_strategy = retry_strategy
+        self.retry_times = retry_times
+        self.retry_script = retry_script
 
 
 class Script(Step, RealNode):

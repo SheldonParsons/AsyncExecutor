@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Union
 
@@ -104,8 +105,8 @@ class HttpClient:
 
         timeout = aiohttp.ClientTimeout(
             total=TIMEOUT,  # 请求总超时
-            connect=TIMEOUT,  # TCP连接超时
-            sock_connect=TIMEOUT,  # socket connect 超时
+            connect=10,  # TCP连接超时
+            sock_connect=10,  # socket connect 超时
             sock_read=TIMEOUT  # socket 读取超时
         )
         trace_config = aiohttp.TraceConfig()
@@ -124,7 +125,6 @@ class HttpClient:
         trace_config.on_dns_resolvehost_end.append(self.on_dns_resolvehost_end)
         self.session = aiohttp.ClientSession(connector=connector, timeout=timeout, trust_env=True,
                                              trace_configs=[trace_config])
-
         return self.session
 
     async def _get_response_details(self, response, request_start):
@@ -195,6 +195,9 @@ class HttpClient:
 
     # 5. 请求异常
     async def on_request_exception(self, session, trace_config_ctx, params):
+        if isinstance(params.exception, asyncio.TimeoutError):
+            # 超时在request里面单独处理：core/payload/node_executor/interface_utils/sender.py
+            return
         """请求发生异常时触发"""
         ctx = trace_config_ctx.trace_request_ctx
         error_time_at = get_current_ms()
@@ -210,7 +213,8 @@ class HttpClient:
 
         timing.error_time = elapsed
         timing.error_time_at = error_time_at
-        await ctx["exception_callback"](json.dumps(error_details, ensure_ascii=False), timing, ctx["process"])
+        await ctx["exception_callback"](json.dumps(error_details, ensure_ascii=False), timing, ctx["process"],
+                                        params.exception)
 
     # 6. 请求重定向
     async def on_request_redirect(self, session, trace_config_ctx, params):

@@ -43,7 +43,6 @@ class ScriptHook(StepExecutor):
             await self.script_notify()
             await DynamicCodeExecutor().execute(context, compile_code=script_code)
         except Exception as e:
-            traceback.print_exc()
             raise RuntimeError(ExceptionProcessObject(f"系统错误：执行脚本出现错误：{e}"))
 
 
