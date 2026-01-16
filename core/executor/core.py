@@ -40,13 +40,13 @@ def position_to_str(position_list: List):
         if position_type == 'task':
             s += "任务/"
         elif position_type == 'case':
-            s += f"{position_item['label']}/"
+            s += f'{position_item["label"]}/'
         elif position_type in ['child_case', 'child_step_case']:
-            s += f'子用例{position_item['index'] + 1}/'
+            s += f'子用例{position_item["index"] + 1}/'
         elif position_type == 'child_multitasker':
             s += f'子任务执行器{position_item["index"] + 1}/'
         else:
-            s += f"{position_item['label']}/"
+            s += f'{position_item["label"]}/'
     return s
 
 
