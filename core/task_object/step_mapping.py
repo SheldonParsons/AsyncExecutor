@@ -1,4 +1,4 @@
-from typing import Dict, Union, Any
+from typing import Dict, Union
 
 
 class Step:
@@ -13,7 +13,7 @@ class VirtualNode:
     pass
 
 
-class RealNode(Any):
+class RealNode(object):
     pass
 
 
