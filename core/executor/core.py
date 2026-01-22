@@ -131,7 +131,7 @@ class RunnerExecutor:
         self.is_end_before_run = False
         self.has_child_error = False
         self.has_child_skipped = False
-        self.redis_semaphore = asyncio.Semaphore(100)
+        self.redis_semaphore = asyncio.Semaphore(10)
 
     def check_and_change_status(self, current_node: MultiwayTreeNode, check_self=True):
         # 这个状态目前只会用于父级、超父级的状态判断

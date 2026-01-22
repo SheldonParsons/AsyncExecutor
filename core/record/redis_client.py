@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Optional, List, Any, Callable, Dict
 
 import aiofiles
+import redis
+
 from core.global_client.async_redis import get_async_client
 from core.global_client.sync_redis import get_sync_client, close_sync_pool
 from core.lua_executor.redis_helper import LuaScriptExecutor
@@ -72,6 +74,9 @@ class AsyncRedisClient:
                 await LuaScriptExecutor(self.client, 'print_value').execute_async(key, json.loads(new_value_str))
             except (json.JSONDecodeError, TypeError):
                 print(f"跳过 key '{key}'，因为其值不是有效的 JSON 字符串: {new_value_str}")
+                continue
+            except redis.exceptions.ConnectionError as e:
+                print("print 连接数过多，已放弃")
                 continue
 
     async def batch_create_and_init_lists(self, data: dict[str, list[Any]], ex: Optional[int] = None) -> None:
