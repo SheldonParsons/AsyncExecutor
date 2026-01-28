@@ -184,7 +184,7 @@ class RunnerExecutor:
         pass
 
     @abstractmethod
-    async def error_callback(self, e: Exception, *args, **kwargs):
+    async def error_callback(self, e: BaseException, *args, **kwargs):
         pass
 
     @abstractmethod

@@ -158,7 +158,6 @@ class DynamicCodeExecutor:
             except RecursionError:
                 raise RecursionErrorException(f"递归深度限制：{DEFAULT_RECURSION_LIMIT}，请优化您的代码")
             except Exception as e:
-                traceback.print_exc()
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 tb = traceback.extract_tb(exc_tb).pop()
                 exe_str = f"错误行号：{tb.lineno - 1},函数：自定义函数:\n"

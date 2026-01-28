@@ -6,6 +6,7 @@ import traceback
 
 import psutil
 
+from server.app.task.effect_task_manager import TaskEffectManager
 from task_process.runner import task_wrapper
 
 
@@ -13,7 +14,8 @@ def monitor_and_run_task(
         task_id,
         target_func,
         done_callback,
-        request
+        request,
+        task_effect: TaskEffectManager
 ):
     """
         负责启动并监控一个运行目标任务的子进程。
@@ -44,10 +46,16 @@ def monitor_and_run_task(
 
         if p_info is None:
             print(f"进程 [监控器 线程 {os.getpid()}] 无法获取进程 {pid} 的句柄。")
-
         while p_info and process.is_alive():
-            # 检查内存
+
             try:
+                # 检查任务是否停止
+                task_status = task_effect.check_and_init()
+                print(f"task_status:{task_status}")
+                if not task_status:
+                    os.kill(pid, signal.SIGUSR2)
+                    break
+                # 检查内存
                 memory_usage = p_info.memory_info().rss
                 peak_memory_usage = max(peak_memory_usage, memory_usage)
                 if memory_usage > (int(os.getenv('MULTI_PROCESS_MEMORY_LIMIT')) * 1024 * 1024):
@@ -78,3 +86,5 @@ def monitor_and_run_task(
         }
         if callable(done_callback):
             done_callback(task_id, profiling_results, start_time)
+        task_effect.set_stopped()
+        task_effect.close_client()

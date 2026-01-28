@@ -2,8 +2,7 @@ import os
 import signal
 import traceback
 
-from global_object.signal import MemoryResourceLimitExceededError, TimeResourceLimitExceededError, \
-    ResourceLimitExceededError
+from global_object.signal import MemoryResourceLimitExceededError, ResourceLimitExceededError, EffectStopExceededError
 
 
 def task_wrapper(target_func, request):
@@ -17,12 +16,12 @@ def task_wrapper(target_func, request):
             print(f"PID {os.getpid()}: 收到 SIGUSR1 (内存超限)，正在退出...")
             raise MemoryResourceLimitExceededError("Memory limit exceeded")
         elif signum == signal.SIGUSR2:
-            print(f"PID {os.getpid()}: 收到 SIGUSR2 (超时)，正在退出...")
-            raise TimeResourceLimitExceededError("Time limit exceeded")
+            print(f"PID {os.getpid()}: 收到 SIGUSR2 (主动停止)，正在退出...")
+            raise EffectStopExceededError("主动停止任务...")
 
     # 注册进程信号
-    signal.signal(signal.SIGUSR1, signal_handler)
-    signal.signal(signal.SIGUSR2, signal_handler)
+    # signal.signal(signal.SIGUSR1, signal_handler)
+    # signal.signal(signal.SIGUSR2, signal_handler)
 
     try:
         print(f"--- 子进程 {os.getpid()} 开始执行任务 ---")

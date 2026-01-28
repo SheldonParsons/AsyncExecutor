@@ -2,8 +2,11 @@ import os
 import uuid
 
 from fastapi import BackgroundTasks, Request
+
+from core.global_client.sync_redis import get_sync_client
 from core.record.redis_client import AsyncRedisClient
 from server.app.task.controller import TaskController, ServerSourceInfo
+from server.app.task.effect_task_manager import TaskEffectManager
 from server.app.task.record_controller import RecordController
 from server.routers.task import task_router
 from task_process.monitor import monitor_and_run_task
@@ -14,15 +17,29 @@ async def execute(background_tasks: BackgroundTasks, request: Request):
     task_id = f"task-{uuid.uuid4().hex[:8]}"
     print(f"API [主线程 {os.getpid()}]: 收到请求，启动任务 {task_id}")
     # Uvicorn单独运行
+    redis_client, _ = get_sync_client()
+    request_data = await request.json()
+    print(f"request_data:{request_data}")
+    task_effect = TaskEffectManager(redis_client, request_data['record']['id'])
     background_tasks.add_task(
         monitor_and_run_task,
         task_id=task_id,
         target_func=TaskController(),
         done_callback=TaskController.done_callback,
-        request=await request.json()
+        request=request_data,
+        task_effect=task_effect
     )
 
     return {"message": "任务已提交", "task_id": task_id}
+
+
+@task_router.post("/stop_task")
+async def stop_task(background_tasks: BackgroundTasks, request: Request):
+    redis_client, _ = get_sync_client()
+    data = await request.json()
+    print(f"data:{data}")
+    TaskEffectManager.batch_stop(redis_client, data['record_id_list'])
+    return {"message": "尝试停止所有任务", "record_id_list": data['record_id_list']}
 
 
 @task_router.post("/restore_record")

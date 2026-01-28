@@ -44,7 +44,7 @@ class AsyncContext:
                 else:
                     await task.after_callback(result, *before_result)
                 return result
-            except Exception as e:
+            except BaseException as e:
                 traceback.print_exc()
                 await task.error_callback(e, *before_result)
 

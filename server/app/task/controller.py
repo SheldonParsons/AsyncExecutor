@@ -1,11 +1,14 @@
 import asyncio
+import signal
 import time
+import traceback
 
 import psutil
 
 from core.global_client.async_redis import close_async_pool
 from core.global_client.sync_redis import close_sync_pool
 from core.inner_entry import run_task
+from global_object.signal import MemoryResourceLimitExceededError
 
 
 class TaskController:
@@ -18,7 +21,50 @@ class TaskController:
             await run_task(request['exec'], request['record'])
             await self._inner_process_done_callback()
 
-        asyncio.run(main_task())
+        self._safe_run(main_task)
+
+    def _safe_run(self, async_func):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        main_task_obj = loop.create_task(async_func())
+
+        def signal_handler_bridge(signum, frame):
+            msg = "MEMORY_LIMIT" if signum == signal.SIGUSR1 else "FORCE_STOP"
+            loop.call_soon_threadsafe(lambda: main_task_obj.cancel(msg))
+
+        signal.signal(signal.SIGUSR1, signal_handler_bridge)
+        signal.signal(signal.SIGUSR2, signal_handler_bridge)
+
+        try:
+            print(">>> [Launcher] 启动 Event Loop...", flush=True)
+            loop.run_until_complete(main_task_obj)
+
+        except asyncio.CancelledError as e:
+
+            cancel_msg = str(e.args[0]) if e.args else ""
+
+            if cancel_msg == "MEMORY_LIMIT":
+                print(">>> [Launcher] 成功捕获：内存超限 (由信号触发)", flush=True)
+
+                traceback.print_exc()
+            elif cancel_msg == "FORCE_STOP":
+                print(">>> [Launcher] 成功捕获：主动停止", flush=True)
+            else:
+                print(f">>> [Launcher] 任务被取消，原因未知: {e}", flush=True)
+
+        except MemoryResourceLimitExceededError:
+            print(">>> [Launcher] 捕获到同步阶段的内存异常", flush=True)
+
+        except Exception as e:
+            print(">>> [Launcher] 捕获到其他异常")
+            traceback.print_exc()
+
+        finally:
+            print(">>> [Launcher] 关闭 Loop", flush=True)
+            signal.signal(signal.SIGUSR1, signal.SIG_DFL)
+            signal.signal(signal.SIGUSR2, signal.SIG_DFL)
+            # loop.close()
 
     @staticmethod
     async def _inner_process_done_callback():

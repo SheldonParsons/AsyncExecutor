@@ -11,3 +11,8 @@ class MemoryResourceLimitExceededError(ResourceLimitExceededError):
 # 自定义超时信号异常
 class TimeResourceLimitExceededError(ResourceLimitExceededError):
     pass
+
+
+# 自定义主动停止信号异常
+class EffectStopExceededError(ResourceLimitExceededError):
+    pass

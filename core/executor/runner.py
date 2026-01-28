@@ -35,7 +35,7 @@ class MainExecutor(Executor):
                 global_options.set_session(session)
                 await PreActionExecutor().run(global_options)
                 await TaskExecutor().run(global_options, task_record)
-        except Exception as e:
+        except BaseException as e:
             traceback.print_exc()
         await PostActionExecutor().run(global_options, task_record)
 
