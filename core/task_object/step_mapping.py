@@ -100,7 +100,7 @@ class Case(HasChildStep, RealNode):
                  parent=None, project_id=None, project_name=None, env=None, error_strategy=None,
                  case_error_strategy=None, env_strategy=None,
                  runtime_parameters_strategy=None, children=None, drive_strategy=None, loop_strategy=None, times=None,
-                 dataset=None, load_loop_script=None):
+                 dataset=None, load_loop_script=None, global_datasource=None):
         self.type = type
         self.id = id
         self.check = check
@@ -122,6 +122,7 @@ class Case(HasChildStep, RealNode):
         self.times = times
         self.dataset = dataset
         self.load_loop_script = load_loop_script
+        self.global_datasource = global_datasource
 
 
 class ChildStepCase(HasChildStep, VirtualNode):

@@ -3,7 +3,8 @@ class Case:
     def __init__(self, type=None, parent=None, id=None, name=None, before_script=None, project_id=None,
                  project_name=None, env=None, data_set=None, drive_strategy=None, loop_times=None, loop_strategy=None,
                  runtime_parameters_strategy=None, error_strategy=None, status=None, index=None, child_case=None,
-                 env_variables=None, start=None, end=None, child_case_count=None):
+                 env_variables=None, start=None, end=None, child_case_count=None, global_datasource=None, *args,
+                 **kwargs):
         self.type = type
         self.parent = parent
         self.label = '主用例'
@@ -26,6 +27,7 @@ class Case:
         self.start = start
         self.end = end
         self.child_case_count = child_case_count
+        self.global_datasource = global_datasource
 
     def to_dict(self):
         return self.__dict__

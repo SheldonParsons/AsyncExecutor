@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from core.customer_script._exception import ForbiddenCallException
 from core.customer_script.captcha_controller.slider import SliderTools
 from core.customer_script.dataset_object import DataSet
+from core.customer_script.global_data_source import GlobalDataSource
 from core.payload.variables_controller.variable import GlobalVariable, EnvVariable, TempVariable
 from core.utils.line_calling import MockFuncGenerator
 from core.utils.pipeline_func import PipelineFuncStaticFuncsMixin
@@ -64,6 +65,8 @@ class ContextDocument:
         self.at.AstExcel = ast_excel_callback
         self.at.response = self.get_response_object(response_details, error_details) if has_response else None
         self.at.SliderTools = SliderTools
+        self.at.GlobalDataSource = GlobalDataSource(self.at.node.node.global_option.global_cache)
+        self.at.g_source = self.at.GlobalDataSource
         for k, v in kwargs.items():
             self.__dict__[k] = v
         for forbidden_function in FORBIDDEN_FUNCTIONS:
