@@ -33,8 +33,10 @@ class CoverInterfaceController:
         return core_interface_info['body']
 
     def cover_body(self, new_body: Union[aiohttp.FormData, str, None]):
-        if not isinstance(new_body, (aiohttp.FormData, str, None)):
-            raise RuntimeError(f"cover_body 函数发生错误，body的值只能为：[aiohttp.FormData、str、None]")
+        if not isinstance(new_body, (aiohttp.FormData, str, dict)) and new_body is not None:
+            raise RuntimeError(f"cover_body 函数发生错误，body的值只能为：[aiohttp.FormData、str、dict、None]")
+        if isinstance(new_body, dict):
+            new_body = json.dumps(new_body, ensure_ascii=False)
         self.interface_run_controller.has_cover_body = True
         core_interface_info: dict = self.get_core_variable("interface", default={})
         core_interface_info['body'] = new_body

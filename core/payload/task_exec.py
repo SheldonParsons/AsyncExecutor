@@ -11,7 +11,7 @@ from core.payload.utils.tools import run_loop_strategy, get_current_ms, StaticPa
 from core.record.child_record.record import RecordInfoRecord
 from core.record.child_record.summary import SummaryRecord
 from core.record.child_record.task import TaskInfoRecord
-from core.task_object.case_list import CaseList,Case
+from core.task_object.case_list import CaseList, Case
 from core.task_object.child_case_list import ChildCase
 from core.task_object.galobal_mapping import MultiwayTreeNode
 from core.task_object.generate_object import GlobalOption
@@ -41,7 +41,7 @@ class RunTaskExecutor(RunnerExecutor):
 
         child_case_list_mapping = self.mapping_child_case_list(self.global_option.child_case_list.list)
         case_executors = deque([
-            RunCaseExecutor(case, self.global_option, child_case_list_mapping.get(case.id), self.task_runner,
+            RunCaseExecutor(case, self.global_option, child_case_list_mapping.get(case.id, []), self.task_runner,
                             self.dynamic_mapping, index, self.record,
                             get_statis_path(case)) for
             case
@@ -65,8 +65,8 @@ class RunTaskExecutor(RunnerExecutor):
 
     @classmethod
     def mapping_child_case_list(cls,
-                                  data_list: List[ChildCase]
-                                  ) -> Dict[int, List[Any]]:
+                                data_list: List[ChildCase]
+                                ) -> Dict[int, List[Any]]:
         result = defaultdict(list)
         for item in data_list:
             result[item.case_id].append(item)
