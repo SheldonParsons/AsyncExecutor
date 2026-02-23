@@ -126,18 +126,20 @@ class DynamicCodeExecutor:
             if not script_source:
                 return self
             return wrapped_code
-        except NameError:
+        except NameError as e:
             # 忽略名称未定义错误（运行时变量）
             return self
         except SyntaxError as e:
             e.lineno = e.lineno - 1
+            CompilerException(e)
             if "invalid syntax" in str(e):
-                return self
+                raise CompilerException(str(e))
             error_msg = "语法错误:\n"
             error_msg += f"- 行 {e.lineno}: SyntaxError {str(e.text)}"
             error_msg += f"- 错误原因 {str(e)}\n"
             raise CompilerException(error_msg)
         except Exception as e:
+            traceback.print_exc()
             raise CompilerException(e)
 
     async def execute(self, context: ContextDocument = None, compile_code: str = None):
