@@ -51,6 +51,7 @@ class ContextDocument:
                  error_details=None, database_result=None, error_raise_func=None,
                  request_tools=None, ast_file_callback=None, ast_excel_callback=None, **kwargs):
         self.at = at
+        self.async_print = self.at.node.node._async_print
         self.print = _print
         self.at.func = MockFuncGenerator()
         self.at.DataSet = dataset_toolkit
@@ -192,7 +193,10 @@ class ContextDocument:
                     self.is_error = True
                     self._error = json.loads(self._ed)
                 else:
-                    response = SimpleNamespace(**json.loads(self._rd))
+                    if isinstance(self._rd, dict):
+                        response = SimpleNamespace(**self._rd)
+                    else:
+                        response = SimpleNamespace(**json.loads(self._rd))
                     self._body = response.body
                     self._headers = response.headers
                     self._code = response.status

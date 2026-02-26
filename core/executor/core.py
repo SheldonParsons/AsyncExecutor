@@ -191,6 +191,14 @@ class RunnerExecutor:
     async def skipped_callback(self, *args, **kwargs) -> bool:
         pass
 
+    async def _async_print(self, *args, sep=' ', end='\n'):
+        _args = [str(item) if not isinstance(item, str) else item for item in args]
+        process = ScriptPrintProcessObject(sep.join(_args))
+        process.set_position_list(self.spi.position_list)
+        print_content = process.to_json()
+        async with self.redis_semaphore:
+            await self.add_step_or_update(print_content)
+
     def _print(self, *args, sep=' ', end='\n'):
         _args = [str(item) if not isinstance(item, str) else item for item in args]
         process = ScriptPrintProcessObject(sep.join(_args))

@@ -31,7 +31,7 @@ class ScriptRunController(StepExecutor):
             def get_ast_excel():
                 return AsyncExcel(self.node.node.global_option)
 
-            context = ContextDocument(variable, self.node.node._print, env_name=env, dataset_toolkit=None,
+            context = ContextDocument(variable, self.node.node._print, env_name=env,
                                       ast_file_callback=get_ast_file, ast_excel_callback=get_ast_excel)
             await self.script_notify()
             dynamic_code_executor = DynamicCodeExecutor().compile(code_str=script_code)

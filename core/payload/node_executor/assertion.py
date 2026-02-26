@@ -106,12 +106,13 @@ class AssertionRunController(StepExecutor):
             assert_desc = await self.assertion_core(assertion_info, compare_key, assert_desc,
                                                     assertion_info.value, t='fast')
         elif assertion_info.assert_mode == AssertionModeEnum.SCRIPT.value:
+            response = await self.get_last_interface_response()
             try:
                 script_code = assertion_info.script
                 env = search_env(self.node)
                 variable = AsyncExecutorVariable(self.node, can_set=False)
                 context = ContextDocument(variable, self.node.node._print, env_name=env,
-                                          dataset_toolkit=None)
+                                          dataset_toolkit=None, response_details=response, has_response=True)
                 await self.script_notify()
                 self.assertion_result = bool(await DynamicCodeExecutor().compile(script_code).execute(context))
             except Exception as e:
