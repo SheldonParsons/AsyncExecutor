@@ -88,7 +88,7 @@ class GlobalDataSource:
         # 2. 遍历内部数据，查找匹配项
         matched_rows = []
         for row in self._table_rows:
-            if data_key in row and str(row[data_key]) in str(target_values):
+            if data_key in row and str(row[data_key]) in target_values:
                 matched_rows.append(row)
 
         return matched_rows
