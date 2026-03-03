@@ -35,7 +35,8 @@ class IfRunController(StepExecutor):
                 context = ContextDocument(variable, self.node.node._print, env_name=env,
                                           dataset_toolkit=None)
                 await self.script_notify()
-                result = bool(await DynamicCodeExecutor().execute(context, compile_code=script_code))
+                print(f"script_code:{script_code}")
+                result = bool(await DynamicCodeExecutor().compile(script_code).execute(context))
             except Exception as e:
                 traceback.print_exc()
                 raise RuntimeError(ExceptionProcessObject(f"系统错误：执行脚本出现错误：{e}"))
