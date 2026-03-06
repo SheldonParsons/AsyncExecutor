@@ -220,6 +220,8 @@ class ExchangeToller:
             if isinstance(process, DoubleParseResult):
                 process_value = variable_mapping.get(process.name, "")
                 _cache_result_mapping = {}
+                if not isinstance(process_value, str):
+                    return process_value
                 process_value_variable_map = VariableParser().parse(process_value)
                 for process_value_variable_key, process_value_variable_value in process_value_variable_map.items():
                     final_value = getattr(MockFuncStaticFuncsMixin, process_value_variable_value.name,
