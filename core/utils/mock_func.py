@@ -1287,17 +1287,17 @@ class MockFuncStaticFuncsMixin:
         except:
             return ""
 
-    current_number = 0
-
-    @staticmethod
-    def increment(step):
-        step = int(step)
-        if not isinstance(step, int) or step <= 0:
-            return ""
-
-        global current_number
-        current_number += step
-        return current_number
+    # current_number = 0
+    #
+    # @staticmethod
+    # def increment(step):
+    #     step = int(step)
+    #     if not isinstance(step, int) or step <= 0:
+    #         return ""
+    #
+    #     global current_number
+    #     current_number += step
+    #     return current_number
 
     @staticmethod
     def guid():

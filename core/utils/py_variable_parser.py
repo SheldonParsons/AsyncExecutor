@@ -218,7 +218,17 @@ class ExchangeToller:
         def get_prefix_result(process: Union[MockParseResult, DoubleParseResult, StaticParseResult] = None,
                               variable_mapping: dict = None):
             if isinstance(process, DoubleParseResult):
-                return variable_mapping.get(process.name, "")
+                process_value = variable_mapping.get(process.name, "")
+                _cache_result_mapping = {}
+                process_value_variable_map = VariableParser().parse(process_value)
+                for process_value_variable_key, process_value_variable_value in process_value_variable_map.items():
+                    final_value = getattr(MockFuncStaticFuncsMixin, process_value_variable_value.name,
+                                          MockFuncStaticFuncsMixin._default_function)(
+                        *process_value_variable_value.mock_args)
+                    _cache_result_mapping[process_value_variable_key] = str(final_value)
+                if len(_cache_result_mapping) > 0:
+                    return self.batch_replace(process_value, _cache_result_mapping)
+                return process_value
             if isinstance(process, MockParseResult):
                 return getattr(MockFuncStaticFuncsMixin, process.name, MockFuncStaticFuncsMixin._default_function)(
                     *process.mock_args)
@@ -282,7 +292,7 @@ if __name__ == "__main__":
     # """
     test_str = "{% mock 'integer',1000,2000 %}"
     variable_mapping: Dict[str, str] = {
-        "name": "sheldon parsons"
+        "name": "{% mock 'timestamp','s','' %}"
     }
     res = ExchangeToller(test_str2, variable_mapping).replace()
     print(res)

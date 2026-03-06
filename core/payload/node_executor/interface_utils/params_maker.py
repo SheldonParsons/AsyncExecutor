@@ -30,7 +30,8 @@ class ParamsMaker:
                     return ExchangeToller(body, variable_mapping, ChangeModeEnum.CHANGE_EVERY_TIME).replace()
             elif body_type == BodyCurrentType.JSON.value:
                 def replace_hook(s):
-                    return ExchangeToller(s, variable_mapping, ChangeModeEnum.CHANGE_EVERY_TIME).replace()
+                    value = ExchangeToller(s, variable_mapping, ChangeModeEnum.CHANGE_EVERY_TIME).replace()
+                    return value
                 if isinstance(body, str):
                     return body
                 dict_body = self.transform_interface_data(self.dict_to_object(body.get('data')), replace_hook)

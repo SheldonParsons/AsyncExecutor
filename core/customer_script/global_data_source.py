@@ -80,7 +80,7 @@ class GlobalDataSource:
         """
         # 1. 先提取外部列表中所有的目标值，存为 Set 以提高查找效率 (O(1))
         target_values = {
-            item.get(external_key)
+            str(item.get(external_key))
             for item in external_list
             if external_key in item
         }
