@@ -134,7 +134,7 @@ class Variable:
         """
         获取ChildCase节点
         """
-        if node.node.metadata.type == 'child_case':
+        if node.node.metadata.type == 'child_case' or node.node.metadata.type == 'child_step_case':
             return node
         else:
             return self._gcc_node(node.parent)
