@@ -292,9 +292,16 @@ if __name__ == "__main__":
     #     "jk": "测试-BJAutoR{% mock 'now','day','yyyymmdd','','start' %}"
     # }
     # """
+    test_str3 = """
+        {{name}}
+    """
     test_str = "{% mock 'integer',1000,2000 %}"
+    # variable_mapping: Dict[str, str] = {
+    #     "name": "{% mock 'timestamp','s','' %}"
+    # }
     variable_mapping: Dict[str, str] = {
-        "name": "{% mock 'timestamp','s','' %}"
+        "name": "{{age}}",
+        "age": "999"
     }
-    res = ExchangeToller(test_str2, variable_mapping).replace()
+    res = ExchangeToller(test_str3, variable_mapping,ChangeModeEnum.JUST_ONCE).replace()
     print(res)

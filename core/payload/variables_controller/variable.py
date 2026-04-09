@@ -3,6 +3,7 @@ import json
 from core.record.utils import VariableGetProcessObject, VariableSetProcessObject, \
     VariableWarningProcessObject
 from core.task_object.galobal_mapping import MultiwayTreeNode
+from core.utils.py_variable_parser import ExchangeToller, ChangeModeEnum
 
 
 class VariableToller:
@@ -175,12 +176,12 @@ class TempVariable(Variable):
         self.node = node
         self.can_set = can_set
 
-    def get(self, key, scope='global'):
+    def get(self, key, scope='global', convert=False):
         # 向上查找temp_variables
         value = self._stv(self.node, key)
         if isinstance(value, self.EmptyObject) and scope in ['global', 'env']:
             # 获取临时变量失败，尝试从env、global中查找
-            return EnvVariable(self.node).get(key, scope)
+            value = EnvVariable(self.node).get(key, scope)
         if isinstance(value, self.EmptyObject):
             self.node.node.send_step(VariableWarningProcessObject(desc=f"没有找到该临时变量：{key}"))
             return None
@@ -190,6 +191,11 @@ class TempVariable(Variable):
             'type': 'temp'
         })
         self.node.node.send_step(VariableGetProcessObject(desc=desc))
+        if convert and isinstance(value, (str, dict)):
+            if isinstance(value, dict):
+                value = json.dumps(value)
+            variable_mapping = VariableToller.get_variable_mapping(self.node)
+            value = ExchangeToller(value, variable_mapping, ChangeModeEnum.CHANGE_EVERY_TIME).replace()
         return value
 
     def set(self, key, value, scope='case'):
