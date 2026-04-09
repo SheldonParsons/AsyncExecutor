@@ -134,7 +134,7 @@ class Variable:
         """
         获取ChildCase节点
         """
-        if node.node.metadata.type == 'child_case' or node.node.metadata.type == 'child_step_case':
+        if node.node.metadata.type == 'child_case':
             return node
         else:
             return self._gcc_node(node.parent)
@@ -196,11 +196,10 @@ class TempVariable(Variable):
         if not self.can_set:
             self.node.node.send_step(VariableWarningProcessObject(desc=f"当前步骤不允许对变量进行设置"))
             return None
-        if scope == 'case':
-            pre_set_node: MultiwayTreeNode = self._gcc_node(self.node)
-        else:
-            pre_set_node: MultiwayTreeNode = self._gtv_node(self.node)
-        pre_set_node.node.metadata.temp_variables[key] = value
+        child_case_node: MultiwayTreeNode = self._gcc_node(self.node)
+        has_temp_variables_node: MultiwayTreeNode = self._gtv_node(self.node)
+        child_case_node.node.metadata.temp_variables[key] = value
+        has_temp_variables_node.node.metadata.temp_variables[key] = value
         desc = json.dumps({
             "key": key,
             "value": value,
